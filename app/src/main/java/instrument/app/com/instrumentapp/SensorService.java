@@ -5,11 +5,14 @@ package instrument.app.com.instrumentapp;
  */
 public class SensorService {
 
+    public int mMicDataDB = 0 ;
 
-
-
+    public void SetMicData(int data) {
+        mMicDataDB = data;
+    }
     public double getS(){
-        return Double.valueOf(String.format("%1.2f",Math.random() * 100));
+        return mMicDataDB;
+        //return Double.valueOf(String.format("%1.2f",Math.random() * 100));
     }
 
 

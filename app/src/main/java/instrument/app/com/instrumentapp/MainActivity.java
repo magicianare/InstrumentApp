@@ -1,5 +1,29 @@
 package instrument.app.com.instrumentapp;
 
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
+import android.graphics.Color;
+import android.media.AudioManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.SystemClock;
+import android.util.Log;
+import android.view.Menu;
+import android.view.View;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.achartengine.GraphicalView;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,30 +36,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-
-import org.achartengine.GraphicalView;
-
-import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
-import android.content.Intent;
-import android.graphics.Color;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.SystemClock;
-import android.util.Log;
-import android.view.Menu;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.RadioGroup;
-import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -71,13 +71,68 @@ public class MainActivity extends Activity {
     private int subT = 50;
     private int xWidth = 5;
     private int yHeight = 100;
-    private int speed = 100;
+    private int speed = 10;
+
+
+    // 마이크용 변수
+    public AudioReader audioReader;
+    private int sampleRate = 8000;
+    private int inputBlockSize = 256;
+    private int sampleDecimate = 1;
+    public  int mMicDataTemp= 0;
+    public Handler mHandlerMic;
+
+
+    public void initAudio(){
+        audioReader = new AudioReader();
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+        mHandlerMic = new Handler(){
+            public void handleMessage(Message msg){
+                super.handleMessage(msg);
+
+                if(msg.what == 0) {
+                    if ((mMicDataTemp) < 0){
+                        //mMicData.setText("0dB");
+                        sensor.SetMicData(0);
+                    } else {
+                        sensor.SetMicData(mMicDataTemp);
+                    }
+                }
+            };
+        };
+    }
+
+    public void MicDoStart()
+    {
+        audioReader.startReader(sampleRate, inputBlockSize * sampleDecimate, new AudioReader.Listener()
+        {
+            @Override
+            public final void onReadComplete(int dB)
+            {
+                receiveDecibel(dB);
+            }
+
+            @Override
+            public void onReadError(int error)
+            {
+            }
+        });
+    }
+
+    private void receiveDecibel(final int dB) {
+        mMicDataTemp = dB;
+        mHandlerMic.sendEmptyMessage(0);
+    }
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        initAudio();
+        MicDoStart();
 
         sensor = new SensorService();
         mainChartLayout = (LinearLayout) findViewById(R.id.main_chart);

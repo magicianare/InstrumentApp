@@ -51,7 +51,7 @@ public class ChartService {
      */
     public GraphicalView getGraphicalView() {
         mGraphicalView = ChartFactory.getCubeLineChartView(context,
-                multipleSeriesDataset, multipleSeriesRenderer, 0.2f);
+                multipleSeriesDataset, multipleSeriesRenderer, 1.0f);
         return mGraphicalView;
     }
 
@@ -111,7 +111,7 @@ public class ChartService {
         multipleSeriesRenderer.setChartTitleTextSize(20);
         multipleSeriesRenderer.setLabelsTextSize(20);
         multipleSeriesRenderer.setLegendTextSize(20);
-        multipleSeriesRenderer.setPointSize(2f);
+        multipleSeriesRenderer.setPointSize(0.1f);
         multipleSeriesRenderer.setFitLegend(true);
         multipleSeriesRenderer.setMargins(new int[]{50, 50, 50, 50});
         multipleSeriesRenderer.setShowGrid(true);
@@ -225,10 +225,18 @@ public class ChartService {
 
         //mSeries.add(x, y);
 
-        sSeries.add(t, s);
-        xSeries.add(t, x);
-        ySeries.add(t, y);
-        zSeries.add(t, z);
+        if(s != -1){
+            sSeries.add(t, s);
+        }
+        if(x != -1){
+            xSeries.add(t, x);
+        }
+        if(y != -1){
+            ySeries.add(t, y);
+        }
+        if(z != -1){
+            zSeries.add(t, z);
+        }
 
         if(!pauseYn){
             double startX = (t-maxX < 0)? 0 : t-maxX;

@@ -94,10 +94,13 @@ public class MainActivity extends Activity {
                 if(msg.what == 0) {
                     if ((mMicDataTemp) < 0){
                         //mMicData.setText("0dB");
-                        sensor.SetMicData(0);
+                        //sensor.SetMicData(0);
+                        setS(0);
                     } else {
-                        sensor.SetMicData(mMicDataTemp);
+                        //sensor.SetMicData(mMicDataTemp);
+                        setS(mMicDataTemp);
                     }
+                    t+= 0.01;
                 }
             };
         };
@@ -132,7 +135,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         initAudio();
-        MicDoStart();
+        //MicDoStart();
 
         sensor = new SensorService();
         mainChartLayout = (LinearLayout) findViewById(R.id.main_chart);
@@ -246,7 +249,8 @@ public class MainActivity extends Activity {
 
                 t=0;
                 mService.resetChart();
-
+                MicDoStart();
+                /*
                 timer = new Timer();
                 timer.schedule(new TimerTask() {
                     @Override
@@ -256,7 +260,7 @@ public class MainActivity extends Activity {
                         t += 0.1;
                     }
                 }, 1, speed);
-
+                */
 
 
                 Log.d("start", "종료");
@@ -289,8 +293,9 @@ public class MainActivity extends Activity {
                 recordBtn.setEnabled(false);
                 Log.d("stop", "시작");
 
-                timer.cancel();
-                timer = null;
+                audioReader.stopReader();
+                //timer.cancel();
+                //timer = null;
 
                 Log.d("stop", "종료");
             }
@@ -450,6 +455,125 @@ public class MainActivity extends Activity {
             }
         }
     };
+
+    public void setS(double s){
+        setChartData(s, -1, -1, -1);
+    }
+
+    public void setChartData(double s, double x, double y, double z){
+
+//        double s = sensor.getS();
+//        double x = sensor.getX();
+//        double y = sensor.getY();
+//        double z = sensor.getZ();
+
+        SimpleDateFormat sdfNow = new SimpleDateFormat("yyyyMMddHHmmss");
+
+
+        mService.updateChart(t, s, x, y, z, pauseYn);
+
+
+
+        if(sMax < s)
+            sMax = s;
+        if(xMax < x)
+            xMax = x;
+        if(yMax < y)
+            yMax = y;
+        if(zMax < z)
+            zMax = z;
+
+        if(sMin == 0 || sMin > s)
+            sMin = s;
+        if(xMin == 0 || xMin > x)
+            xMin = x;
+        if(yMin == 0 || yMin > y)
+            yMin = y;
+        if(zMin == 0 || zMin > z)
+            zMin = z;
+
+        sMaxTv.setText(String.valueOf(sMax));
+        xMaxTv.setText(String.valueOf(xMax));
+        yMaxTv.setText(String.valueOf(yMax));
+        zMaxTv.setText(String.valueOf(zMax));
+
+        sMinTv.setText(String.valueOf(sMin));
+        xMinTv.setText(String.valueOf(xMin));
+        yMinTv.setText(String.valueOf(yMin));
+        zMinTv.setText(String.valueOf(zMin));
+
+
+        if(blueToothYn){
+            if(recordYn && subT > 0){
+                mSocketThread.write("Y,"+t+","+s+","+x+","+y+","+z);
+            }else{
+                //Log.d("data", "N,"+t+","+s+","+x+","+y+","+z);
+                mSocketThread.write("N,"+t+","+s+","+x+","+y+","+z);
+            }
+
+        }
+
+        if(recordYn && subT > 0){
+
+//                Log.d("record start", "start");
+            //sService.updateChart(t, x, y, z, s, false);
+            //xService.updateChart(t, x, y, z, s, false);
+            //yService.updateChart(t, x, y, z, s, false);
+            //zService.updateChart(t, x, y, z, s, false);
+
+            double[] record = new double[5];
+
+            record[0] = t;
+            record[1] = s;
+            record[2] = x;
+            record[3] = y;
+            record[4] = z;
+            recordList.add(record);
+
+            fileWrite(t+","+s+","+x+","+y+","+z+"\n");
+
+            if(rsMax < s)
+                rsMax = s;
+            if(rxMax < x)
+                rxMax = x;
+            if(ryMax < y)
+                ryMax = y;
+            if(rzMax < z)
+                rzMax = z;
+
+            if(rsMin == 0 || rsMin > s)
+                rsMin = s;
+            if(rxMin == 0 || rxMin > x)
+                rxMin = x;
+            if(ryMin == 0 || ryMin > y)
+                ryMin = y;
+            if(rzMin == 0 || rzMin > z)
+                rzMin = z;
+
+            rsMaxTv.setText(String.valueOf(rsMax));
+            rxMaxTv.setText(String.valueOf(rxMax));
+            ryMaxTv.setText(String.valueOf(ryMax));
+            rzMaxTv.setText(String.valueOf(rzMax));
+
+            rsMinTv.setText(String.valueOf(rsMin));
+            rxMinTv.setText(String.valueOf(rxMin));
+            ryMinTv.setText(String.valueOf(ryMin));
+            rzMinTv.setText(String.valueOf(rzMin));
+
+            subT--;
+
+
+        }else if(recordYn && subT == 0) {
+
+            sService.updateChart(recordList);
+            xService.updateChart(recordList);
+            yService.updateChart(recordList);
+            zService.updateChart(recordList);
+            fileClose();
+            recordYn = false;
+        }
+    }
+
 
     public void recordCreate(){
         Log.d("sub layout", "click");

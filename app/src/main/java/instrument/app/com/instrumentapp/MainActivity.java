@@ -65,7 +65,6 @@ public class MainActivity extends Activity {
     private List<double[]> list, recordList;
     private boolean pauseYn;
     private boolean recordYn;
-    private boolean createRecordChart;
     private boolean blueToothYn;
     private double t = 0;
     private double recordT = 0;
@@ -255,6 +254,12 @@ public class MainActivity extends Activity {
                 startTime = System.currentTimeMillis();
                 mService.resetChart();
                 MicDoStart();
+
+
+                if(blueToothYn){
+                    mSocketThread.write("M,START,E");
+                }
+
                 /*
                 timer = new Timer();
                 timer.schedule(new TimerTask() {
@@ -284,6 +289,10 @@ public class MainActivity extends Activity {
                 //startBtn.setEnabled(pauseYn);
                 pauseYn = !pauseYn;
 
+                if(blueToothYn){
+                    mSocketThread.write("M,PAUSE,E");
+                }
+
                 Log.d("pause", "종료");
             }
         });
@@ -299,6 +308,11 @@ public class MainActivity extends Activity {
                 Log.d("stop", "시작");
 
                 audioReader.stopReader();
+                startTime = 0;
+
+                if(blueToothYn){
+                    mSocketThread.write("M,STOP,E");
+                }
                 //timer.cancel();
                 //timer = null;
 
@@ -723,6 +737,10 @@ public class MainActivity extends Activity {
         mSocketThread.start();
 
         blueToothYn = true;
+
+        if(startTime != 0){
+            mSocketThread.write("M,START,E");
+        }
     }
 
     // 데이터 송수신 스레드

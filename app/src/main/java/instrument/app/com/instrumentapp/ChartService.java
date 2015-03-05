@@ -249,7 +249,7 @@ public class ChartService {
 
     }
 
-    public void updateChart2(List<double[]> list) {
+    public void updateChart2(List<double[]> list, boolean pauseYn) {
         for (int i = 0; i <list.size(); i++) {
             double[] record = list.get(i);
             sSeries.add(record[0], record[1]);
@@ -259,13 +259,23 @@ public class ChartService {
 
         }
 
-        double t = list.get(list.size()-1)[0];
+        if(index > 100){
+            sSeries.remove(0);
+            xSeries.remove(0);
+            ySeries.remove(0);
+            zSeries.remove(0);
+        }
+        index++;
 
-        double startX = (t-maxX < 0)? 0 : t-maxX;
-        double endX = (t-maxX > 0) ? t : maxX;
+        if(!pauseYn) {
+            double t = list.get(list.size() - 1)[0];
 
-        multipleSeriesRenderer.setRange(new double[]{startX, endX, 0d, maxY});
-        mGraphicalView.repaint();//이 곳은 해도 호출 invalidate()
+            double startX = (t - maxX < 0) ? 0 : t - maxX;
+            double endX = (t - maxX > 0) ? t : maxX;
+
+            multipleSeriesRenderer.setRange(new double[]{startX, endX, 0d, maxY});
+            mGraphicalView.repaint();//이 곳은 해도 호출 invalidate()
+        }
     }
 
     public void SeriesChange(String series){

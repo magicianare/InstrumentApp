@@ -375,25 +375,25 @@ public class MainActivity extends Activity {
         SimpleDateFormat sdfNow = new SimpleDateFormat("yyyyMMddHHmmss");
 
 
-//        double[] data = new double[5];
-//
-//        data[0] = t;
-//        data[1] = s;
-//        data[2] = x;
-//        data[3] = y;
-//        data[4] = z;
-//        list.add(data);
-//
-//
-//        if(speed >= 10){
-//            mService.updateChart2(list);
-//            list.clear();
-//            speed = 0;
-//        }else{
-//            speed++;
-//        }
+        double[] data = new double[5];
 
-        mService.updateChart(t, s, x, y, z, pauseYn);
+        data[0] = t;
+        data[1] = s;
+        data[2] = x;
+        data[3] = y;
+        data[4] = z;
+        list.add(data);
+
+
+        if(speed >= 5){
+            mService.updateChart2(list, pauseYn);
+            list.clear();
+            speed = 0;
+        }else{
+            speed++;
+        }
+
+//        mService.updateChart(t, s, x, y, z, pauseYn);
 
 
 

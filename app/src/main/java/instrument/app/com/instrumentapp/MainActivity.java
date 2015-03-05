@@ -62,17 +62,18 @@ public class MainActivity extends Activity {
     private double sMin, xMin, yMin, zMin, sMax, xMax, yMax, zMax;
     private double rsMin, rxMin, ryMin, rzMin, rsMax, rxMax, ryMax, rzMax;
     private Timer timer;
-    private List<double[]> recordList;
+    private List<double[]> list, recordList;
     private boolean pauseYn;
     private boolean recordYn;
     private boolean createRecordChart;
     private boolean blueToothYn;
     private double t = 0;
-    private int subT = 50;
+    private double recordT = 0;
     private int xWidth = 5;
     private int yHeight = 100;
-    private int speed = 10;
-
+    private int speed = 0;
+    private long startTime = 0;
+    private long recordStartTime = 0;
 
     // 마이크용 변수
     public AudioReader audioReader;
@@ -91,16 +92,19 @@ public class MainActivity extends Activity {
             public void handleMessage(Message msg){
                 super.handleMessage(msg);
 
+                t = (double)(System.currentTimeMillis() - startTime)/1000.0;
+
                 if(msg.what == 0) {
                     if ((mMicDataTemp) < 0){
                         //mMicData.setText("0dB");
                         //sensor.SetMicData(0);
+
                         setS(0);
                     } else {
                         //sensor.SetMicData(mMicDataTemp);
                         setS(mMicDataTemp);
                     }
-                    t+= 0.01;
+
                 }
             };
         };
@@ -247,7 +251,8 @@ public class MainActivity extends Activity {
                 ySubChartLayout.removeAllViews();
                 zSubChartLayout.removeAllViews();
 
-                t=0;
+                list = new ArrayList<double[]>();
+                startTime = System.currentTimeMillis();
                 mService.resetChart();
                 MicDoStart();
                 /*
@@ -304,6 +309,9 @@ public class MainActivity extends Activity {
         recordBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                recordBtn.setEnabled(false);
+
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0);
                 lp.weight = 0.2f;
                 mainChartLayout.setLayoutParams(lp);
@@ -314,6 +322,7 @@ public class MainActivity extends Activity {
                 fileCreate();
 
                 recordYn = true;
+                recordStartTime = System.currentTimeMillis();
 
             }
         });
@@ -338,126 +347,22 @@ public class MainActivity extends Activity {
         //정시 업데이트 도표
         public void handleMessage(Message msg) {
 
-//            double s = Double.valueOf(String.format("%1.2f",Math.random() * 100));
-//            double x = Double.valueOf(String.format("%1.2f",Math.random() * 100));
-//            double y = Double.valueOf(String.format("%1.2f",Math.random() * 100));
-//            double z = Double.valueOf(String.format("%1.2f",Math.random() * 100));
+            double s = Double.valueOf(String.format("%1.2f",Math.random() * 100));
+            double x = Double.valueOf(String.format("%1.2f",Math.random() * 100));
+            double y = Double.valueOf(String.format("%1.2f",Math.random() * 100));
+            double z = Double.valueOf(String.format("%1.2f",Math.random() * 100));
 
-            double s = sensor.getS();
-            double x = sensor.getX();
-            double y = sensor.getY();
-            double z = sensor.getZ();
+//            double s = sensor.getS();
+//            double x = sensor.getX();
+//            double y = sensor.getY();
+//            double z = sensor.getZ();
 
-            SimpleDateFormat sdfNow = new SimpleDateFormat("yyyyMMddHHmmss");
-
-
-            mService.updateChart(t, s, x, y, z, pauseYn);
-
-
-
-            if(sMax < s)
-                sMax = s;
-            if(xMax < x)
-                xMax = x;
-            if(yMax < y)
-                yMax = y;
-            if(zMax < z)
-                zMax = z;
-
-            if(sMin == 0 || sMin > s)
-                sMin = s;
-            if(xMin == 0 || xMin > x)
-                xMin = x;
-            if(yMin == 0 || yMin > y)
-                yMin = y;
-            if(zMin == 0 || zMin > z)
-                zMin = z;
-
-            sMaxTv.setText(String.valueOf(sMax));
-            xMaxTv.setText(String.valueOf(xMax));
-            yMaxTv.setText(String.valueOf(yMax));
-            zMaxTv.setText(String.valueOf(zMax));
-
-            sMinTv.setText(String.valueOf(sMin));
-            xMinTv.setText(String.valueOf(xMin));
-            yMinTv.setText(String.valueOf(yMin));
-            zMinTv.setText(String.valueOf(zMin));
-
-
-            if(blueToothYn){
-                if(recordYn && subT > 0){
-                    mSocketThread.write("Y,"+t+","+s+","+x+","+y+","+z);
-                }else{
-                    //Log.d("data", "N,"+t+","+s+","+x+","+y+","+z);
-                    mSocketThread.write("N,"+t+","+s+","+x+","+y+","+z);
-                }
-
-            }
-
-            if(recordYn && subT > 0){
-
-//                Log.d("record start", "start");
-                //sService.updateChart(t, x, y, z, s, false);
-                //xService.updateChart(t, x, y, z, s, false);
-                //yService.updateChart(t, x, y, z, s, false);
-                //zService.updateChart(t, x, y, z, s, false);
-
-                double[] record = new double[5];
-
-                record[0] = t;
-                record[1] = s;
-                record[2] = x;
-                record[3] = y;
-                record[4] = z;
-                recordList.add(record);
-
-                fileWrite(t+","+s+","+x+","+y+","+z+"\n");
-
-                if(rsMax < s)
-                    rsMax = s;
-                if(rxMax < x)
-                    rxMax = x;
-                if(ryMax < y)
-                    ryMax = y;
-                if(rzMax < z)
-                    rzMax = z;
-
-                if(rsMin == 0 || rsMin > s)
-                    rsMin = s;
-                if(rxMin == 0 || rxMin > x)
-                    rxMin = x;
-                if(ryMin == 0 || ryMin > y)
-                    ryMin = y;
-                if(rzMin == 0 || rzMin > z)
-                    rzMin = z;
-
-                rsMaxTv.setText(String.valueOf(rsMax));
-                rxMaxTv.setText(String.valueOf(rxMax));
-                ryMaxTv.setText(String.valueOf(ryMax));
-                rzMaxTv.setText(String.valueOf(rzMax));
-
-                rsMinTv.setText(String.valueOf(rsMin));
-                rxMinTv.setText(String.valueOf(rxMin));
-                ryMinTv.setText(String.valueOf(ryMin));
-                rzMinTv.setText(String.valueOf(rzMin));
-
-                subT--;
-
-
-            }else if(recordYn && subT == 0) {
-
-                sService.updateChart(recordList);
-                xService.updateChart(recordList);
-                yService.updateChart(recordList);
-                zService.updateChart(recordList);
-                fileClose();
-                recordYn = false;
-            }
+            setChartData(s, x, y, z);
         }
     };
 
     public void setS(double s){
-        setChartData(s, -1, -1, -1);
+        setChartData(s, 0, 0, 0);
     }
 
     public void setChartData(double s, double x, double y, double z){
@@ -469,6 +374,24 @@ public class MainActivity extends Activity {
 
         SimpleDateFormat sdfNow = new SimpleDateFormat("yyyyMMddHHmmss");
 
+
+//        double[] data = new double[5];
+//
+//        data[0] = t;
+//        data[1] = s;
+//        data[2] = x;
+//        data[3] = y;
+//        data[4] = z;
+//        list.add(data);
+//
+//
+//        if(speed >= 10){
+//            mService.updateChart2(list);
+//            list.clear();
+//            speed = 0;
+//        }else{
+//            speed++;
+//        }
 
         mService.updateChart(t, s, x, y, z, pauseYn);
 
@@ -504,16 +427,18 @@ public class MainActivity extends Activity {
 
 
         if(blueToothYn){
-            if(recordYn && subT > 0){
-                mSocketThread.write("Y,"+t+","+s+","+x+","+y+","+z);
+
+            if(recordYn && recordT <= 5){
+                mSocketThread.write("Y,"+t+","+s+","+x+","+y+","+z+",E");
             }else{
                 //Log.d("data", "N,"+t+","+s+","+x+","+y+","+z);
-                mSocketThread.write("N,"+t+","+s+","+x+","+y+","+z);
+                mSocketThread.write("N,"+t+","+s+","+x+","+y+","+z+",E");
             }
 
         }
 
-        if(recordYn && subT > 0){
+        //Log.d("recordT", String.valueOf(recordT));
+        if(recordYn && recordT <= 5){
 
 //                Log.d("record start", "start");
             //sService.updateChart(t, x, y, z, s, false);
@@ -523,14 +448,14 @@ public class MainActivity extends Activity {
 
             double[] record = new double[5];
 
-            record[0] = t;
+            record[0] = recordT;
             record[1] = s;
             record[2] = x;
             record[3] = y;
             record[4] = z;
             recordList.add(record);
 
-            fileWrite(t+","+s+","+x+","+y+","+z+"\n");
+            fileWrite(recordT+","+s+","+x+","+y+","+z+"\n");
 
             if(rsMax < s)
                 rsMax = s;
@@ -560,10 +485,10 @@ public class MainActivity extends Activity {
             ryMinTv.setText(String.valueOf(ryMin));
             rzMinTv.setText(String.valueOf(rzMin));
 
-            subT--;
+            recordT = (double)(System.currentTimeMillis() - recordStartTime)/1000.0;
 
 
-        }else if(recordYn && subT == 0) {
+        }else if(recordYn && recordT > 5) {
 
             sService.updateChart(recordList);
             xService.updateChart(recordList);
@@ -846,7 +771,7 @@ public class MainActivity extends Activity {
                         Message msg = Message.obtain(mHandler, 9, "PAUSE");
                         mHandler.sendMessage(msg);
                     }else if(strBuf.equals("RECORD")){
-                        recordYn = true;
+                        //recordYn = true;
                         Message msg = Message.obtain(mHandler, 9, "RECORD");
                         mHandler.sendMessage(msg);
                     }
@@ -906,6 +831,13 @@ public class MainActivity extends Activity {
 
     }
 
+    public double getTime(){
+
+        System.currentTimeMillis();
+
+        return 0;
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -926,6 +858,8 @@ public class MainActivity extends Activity {
         if (timer != null) {
             timer.cancel();
         }
+
+        audioReader.stopReader();
     }
 
 

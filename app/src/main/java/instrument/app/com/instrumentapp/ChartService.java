@@ -38,6 +38,7 @@ public class ChartService {
     private double maxX;
     private double maxY;
     private float lineWidth = 3.0f;
+    private int index = 0;
 
     public ChartService(Context context, double maxX, double maxY){
         this.context = context;
@@ -51,7 +52,7 @@ public class ChartService {
      */
     public GraphicalView getGraphicalView() {
         mGraphicalView = ChartFactory.getCubeLineChartView(context,
-                multipleSeriesDataset, multipleSeriesRenderer, 1.0f);
+                multipleSeriesDataset, multipleSeriesRenderer, 0.5f);
         return mGraphicalView;
     }
 
@@ -168,7 +169,7 @@ public class ChartService {
         multipleSeriesRenderer.setChartTitleTextSize(10);
         multipleSeriesRenderer.setLabelsTextSize(10);
         multipleSeriesRenderer.setLegendTextSize(10);
-        multipleSeriesRenderer.setPointSize(2f);
+        multipleSeriesRenderer.setPointSize(0.1f);
         multipleSeriesRenderer.setFitLegend(true);
         multipleSeriesRenderer.setMargins(new int[]{10, 30, 10, 10});
         multipleSeriesRenderer.setShowGrid(true);
@@ -225,18 +226,18 @@ public class ChartService {
 
         //mSeries.add(x, y);
 
-        if(s != -1){
-            sSeries.add(t, s);
+        sSeries.add(t, s);
+        xSeries.add(t, x);
+        ySeries.add(t, y);
+        zSeries.add(t, z);
+
+        if(index > 200){
+            sSeries.remove(0);
+            xSeries.remove(0);
+            ySeries.remove(0);
+            zSeries.remove(0);
         }
-        if(x != -1){
-            xSeries.add(t, x);
-        }
-        if(y != -1){
-            ySeries.add(t, y);
-        }
-        if(z != -1){
-            zSeries.add(t, z);
-        }
+        index++;
 
         if(!pauseYn){
             double startX = (t-maxX < 0)? 0 : t-maxX;
@@ -246,6 +247,25 @@ public class ChartService {
             mGraphicalView.repaint();//이 곳은 해도 호출 invalidate()
         }
 
+    }
+
+    public void updateChart2(List<double[]> list) {
+        for (int i = 0; i <list.size(); i++) {
+            double[] record = list.get(i);
+            sSeries.add(record[0], record[1]);
+            xSeries.add(record[0], record[2]);
+            ySeries.add(record[0], record[3]);
+            zSeries.add(record[0], record[4]);
+
+        }
+
+        double t = list.get(list.size()-1)[0];
+
+        double startX = (t-maxX < 0)? 0 : t-maxX;
+        double endX = (t-maxX > 0) ? t : maxX;
+
+        multipleSeriesRenderer.setRange(new double[]{startX, endX, 0d, maxY});
+        mGraphicalView.repaint();//이 곳은 해도 호출 invalidate()
     }
 
     public void SeriesChange(String series){

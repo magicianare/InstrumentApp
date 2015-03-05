@@ -257,7 +257,7 @@ public class MainActivity extends Activity {
 
 
                 if(blueToothYn){
-                    mSocketThread.write("M,START,E");
+                    mSocketThread.write("M,STT,E");
                 }
 
                 /*
@@ -290,7 +290,7 @@ public class MainActivity extends Activity {
                 pauseYn = !pauseYn;
 
                 if(blueToothYn){
-                    mSocketThread.write("M,PAUSE,E");
+                    mSocketThread.write("M,PAU,E");
                 }
 
                 Log.d("pause", "종료");
@@ -311,7 +311,7 @@ public class MainActivity extends Activity {
                 startTime = 0;
 
                 if(blueToothYn){
-                    mSocketThread.write("M,STOP,E");
+                    mSocketThread.write("M,STP,E");
                 }
                 //timer.cancel();
                 //timer = null;
@@ -334,6 +334,10 @@ public class MainActivity extends Activity {
                 recordList = new ArrayList<double[]>();
                 recordCreate();
                 fileCreate();
+
+                if(blueToothYn && !recordYn){
+                    mSocketThread.write("M,RCD,E");
+                }
 
                 recordYn = true;
                 recordStartTime = System.currentTimeMillis();
@@ -720,6 +724,7 @@ public class MainActivity extends Activity {
                     pauseBtn.performClick();
                 }else if(strMsg.equals("RECORD")){
                     recordBtn.performClick();
+
                 }
             }
         }

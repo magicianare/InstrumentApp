@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.media.AudioManager;
@@ -22,8 +23,6 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.androidplot.Plot;
-import com.androidplot.util.Redrawer;
 import com.androidplot.xy.XYPlot;
 
 import org.achartengine.GraphicalView;
@@ -35,16 +34,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
 
 public class MainActivity extends Activity {
 
-    private SensorService sensor;
     private String path = "/sdcard/Instrument/"; // 파일이 저장될 경로
     private FileOutputStream fos;
 
@@ -86,6 +82,12 @@ public class MainActivity extends Activity {
     public  int mMicDataTemp= 0;
     public Handler mHandlerMic;
 
+    private SerialConnector mSerialConnector;
+    private Context mContext = null;
+    private String[] mReceiveData = null;
+    private boolean mIsUsbConnocted = false;
+
+
 
     public void initAudio(){
         audioReader = new AudioReader();
@@ -98,14 +100,26 @@ public class MainActivity extends Activity {
                 t = (double)(System.currentTimeMillis() - startTime)/1000.0;
 
                 if(msg.what == 0) {
+                    if (mIsUsbConnocted) {
+                        mReceiveData = mSerialConnector.GetSerialData();
+                    } else {
+                        // When USB is not connected dummy data
+                        mReceiveData = new String[3];
+                        mReceiveData[0] = "10";
+                        mReceiveData[1] = "20";
+                        mReceiveData[2] = "30";
+                    }
+
                     if ((mMicDataTemp) < 0){
                         //mMicData.setText("0dB");
                         //sensor.SetMicData(0);
 
-                        setS(0);
+                        //setS(0);
+                        setChartData(0, Integer.parseInt(mReceiveData[0]), Integer.parseInt(mReceiveData[1]),Integer.parseInt(mReceiveData[2]));
                     } else {
                         //sensor.SetMicData(mMicDataTemp);
-                        setS(mMicDataTemp);
+                        //setS(mMicDataTemp);
+                        setChartData(mMicDataTemp, Integer.parseInt(mReceiveData[0]), Integer.parseInt(mReceiveData[1]),Integer.parseInt(mReceiveData[2]));
                     }
 
                 }
@@ -141,10 +155,21 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initAudio();
-        //MicDoStart();
 
-        sensor = new SensorService();
+        // Usb to Serial init
+        mContext = getApplicationContext();
+
+        mSerialConnector = new SerialConnector(mContext);
+        mIsUsbConnocted = mSerialConnector.initialize();
+
+        if (!mIsUsbConnocted) {
+            Log.e("","Usb is Not Connected");
+        }
+
+        // Mic init
+        initAudio();
+
+
         mainChartLayout = (XYPlot) findViewById(R.id.main_chart);
         subChartLayout = (LinearLayout) findViewById(R.id.sub_chart);
 

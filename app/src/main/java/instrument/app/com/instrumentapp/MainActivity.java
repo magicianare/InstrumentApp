@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private String path = "/sdcard/Instrument/"; // 파일이 저장될 경로
     private FileOutputStream fos;
 
+    private static final int staticZ = 70;
     private static final int ACTION_ENABLE_BT = 101;
     private static final String  BLUE_NAME = "BluetoothEx";  // 접속시 사용하는 이름
     private BluetoothAdapter mBA;
@@ -63,9 +64,7 @@ public class MainActivity extends Activity {
     private TextView rsMaxTv, rxMaxTv, ryMaxTv, rzMaxTv, rsMinTv, rxMinTv, ryMinTv, rzMinTv;
     private double sMin, xMin, yMin, zMin, sMax, xMax, yMax, zMax;
     private double rsMin, rxMin, ryMin, rzMin, rsMax, rxMax, ryMax, rzMax;
-    private boolean pauseYn;
-    private boolean recordYn;
-    private boolean blueToothYn;
+    private boolean pauseYn, recordYn, blueToothYn, recordStartYn;
     private double t = 0;
     private double recordT = 0;
     private long startTime = 0;
@@ -393,8 +392,9 @@ public class MainActivity extends Activity {
                     mSocketThread.write("M,RCD,E");
                 }
 
-                recordYn = true;
-                recordStartTime = System.currentTimeMillis();
+                recordStartYn = true;
+//                recordYn = true;
+//                recordStartTime = System.currentTimeMillis();
 
             }
         });
@@ -487,6 +487,11 @@ public class MainActivity extends Activity {
                 mSocketThread.write("N,"+t+","+s+","+x+","+y+","+z+",E");
             }
 
+        }
+
+        if(recordStartYn && !recordYn && z > staticZ){
+            recordYn = true;
+            recordStartTime = System.currentTimeMillis();
         }
 
         if(recordYn && recordT <= 5){

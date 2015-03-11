@@ -156,13 +156,13 @@ public class SerialConnector {
                             return receiveData;
                         } else {
                             try{
-                                Thread.sleep(5); // 1초 = 1000밀리초
+                                Thread.sleep(10); // 1초 = 1000밀리초
                             } catch (InterruptedException ignore) {}
                         }
 
                     } else {
                         try{
-                            Thread.sleep(5); // 1초 = 1000밀리초
+                            Thread.sleep(10); // 1초 = 1000밀리초
                         } catch (InterruptedException ignore) {}
                     }
                 } catch (IOException e) {

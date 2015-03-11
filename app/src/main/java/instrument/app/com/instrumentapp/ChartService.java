@@ -20,7 +20,7 @@ import java.util.Arrays;
  */
 public class ChartService {
 
-    private static final int HISTORY_SIZE = 300;            // number of points to plot in history
+    private static final int HISTORY_SIZE = 310;            // number of points to plot in history
 
     private Redrawer redrawer;
     private XYPlot mainPlot;
@@ -69,6 +69,7 @@ public class ChartService {
         mainPlot.setRangeLabel("");
         mainPlot.getRangeLabelWidget().pack();
 
+
         final PlotStatistics histStats = new PlotStatistics(1000, false);
 
         mainPlot.addListener(histStats);
@@ -81,21 +82,25 @@ public class ChartService {
         if(series.equals("sS")){
             mainPlot.clear();
             mainPlot.addSeries(sSeries, new LineAndPointFormatter(Color.rgb(100, 100, 200), null, null, null));
+            mainPlot.setRangeBoundaries(0, 100, BoundaryMode.GROW);
         }else if(series.equals("xS")){
             mainPlot.clear();
             mainPlot.addSeries(xSeries, new LineAndPointFormatter(Color.rgb(100, 200, 100), null, null, null));
+            mainPlot.setRangeBoundaries(0, 100, BoundaryMode.GROW);
         }else if(series.equals("yS")){
             mainPlot.clear();
             mainPlot.addSeries(ySeries, new LineAndPointFormatter(Color.rgb(200, 100, 100), null, null, null));
+            mainPlot.setRangeBoundaries(0, 100, BoundaryMode.GROW);
         }else if(series.equals("zS")){
             mainPlot.clear();
             mainPlot.addSeries(zSeries, new LineAndPointFormatter(Color.rgb(200, 200, 200), null, null, null));
+            mainPlot.setRangeBoundaries(0, 100, BoundaryMode.GROW);
         }else if(series.equals("all")){
             mainPlot.clear();
             mainPlot.addSeries(sSeries, new LineAndPointFormatter(Color.rgb(100, 100, 200), null, null, null));
             mainPlot.addSeries(xSeries, new LineAndPointFormatter(Color.rgb(100, 200, 100), null, null, null));
             mainPlot.addSeries(ySeries, new LineAndPointFormatter(Color.rgb(200, 100, 100), null, null, null));
-            mainPlot.addSeries(zSeries, new LineAndPointFormatter(Color.rgb(100, 100, 100), null, null, null));
+            mainPlot.addSeries(zSeries, new LineAndPointFormatter(Color.rgb(200, 200, 200), null, null, null));
         }else{
             mainPlot.clear();
         }
@@ -135,7 +140,8 @@ public class ChartService {
     }
 
     public void clear(){
-        mainPlot.clear();
+        mainPlot.invalidate();
+
     }
     public void start(){
         redrawer.start();

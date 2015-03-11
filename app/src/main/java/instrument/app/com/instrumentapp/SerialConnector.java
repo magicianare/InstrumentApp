@@ -129,7 +129,7 @@ public class SerialConnector {
     }
 
     public String[] GetSerialData() {
-        byte buffer[] = new byte[64];
+        byte buffer[] = new byte[32];
         //Arrays.fill(buffer, (byte)0x00);
 
         boolean flag = true;
@@ -147,25 +147,34 @@ public class SerialConnector {
 
                     if (numBytesRead > 0) {
 
-                        String str = new String(buffer, 0, 64);
+                        String str = new String(buffer, 0, 32);
 
                         String[] receiveData = parseData(str);
 
 
                         if (receiveData != null) {
                             return receiveData;
+                        } else {
+                            try{
+                                Thread.sleep(5); // 1초 = 1000밀리초
+                            } catch (InterruptedException ignore) {}
                         }
 
                     } else {
-                        //return null;
+                        try{
+                            Thread.sleep(5); // 1초 = 1000밀리초
+                        } catch (InterruptedException ignore) {}
                     }
                 } catch (IOException e) {
                     Log.d(tag, "IOException - mDriver.read");
                     e.printStackTrace();
+                    //return null;
 
                 }
 
 
+            } else {
+                return null;
             }
         }
         return null;

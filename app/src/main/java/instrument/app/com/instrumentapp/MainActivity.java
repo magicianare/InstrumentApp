@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
@@ -55,16 +56,13 @@ public class MainActivity extends Activity {
 
     private LinearLayout subChartLayout;
     private XYPlot mainChartLayout, sSubChartLayout, xSubChartLayout, ySubChartLayout, zSubChartLayout;
-    private GraphicalView mView, sView,xView, yView, zView;
     private ChartService mService;
     private SingleChartService sService, xService, yService, zService;
-    private Button startBtn, stopBtn, pauseBtn, recordBtn;
+    private Button startBtn, stopBtn, pauseBtn, recordBtn, restartBtn;
     private TextView sMaxTv, xMaxTv, yMaxTv, zMaxTv, sMinTv, xMinTv, yMinTv, zMinTv;
     private TextView rsMaxTv, rxMaxTv, ryMaxTv, rzMaxTv, rsMinTv, rxMinTv, ryMinTv, rzMinTv;
     private double sMin, xMin, yMin, zMin, sMax, xMax, yMax, zMax;
     private double rsMin, rxMin, ryMin, rzMin, rsMax, rxMax, ryMax, rzMax;
-    private Timer timer;
-    private List<double[]> list, recordList;
     private boolean pauseYn;
     private boolean recordYn;
     private boolean blueToothYn;
@@ -73,6 +71,7 @@ public class MainActivity extends Activity {
     private long startTime = 0;
     private long recordStartTime = 0;
     private String preStat = "sS";
+    private int minCnt, rMinCnt;
 
     // 마이크용 변수
     public AudioReader audioReader;
@@ -111,14 +110,8 @@ public class MainActivity extends Activity {
                     }
 
                     if ((mMicDataTemp) < 0){
-                        //mMicData.setText("0dB");
-                        //sensor.SetMicData(0);
-
-                        //setS(0);
                         setChartData(0, Integer.parseInt(mReceiveData[0]), Integer.parseInt(mReceiveData[1]),Integer.parseInt(mReceiveData[2]));
-                    } else {
-                        //sensor.SetMicData(mMicDataTemp);
-                        //setS(mMicDataTemp);
+                    } else {;
                         setChartData(mMicDataTemp, Integer.parseInt(mReceiveData[0]), Integer.parseInt(mReceiveData[1]),Integer.parseInt(mReceiveData[2]));
                     }
 
@@ -154,8 +147,20 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 
+        // 블루투스 사용 가능상태 판단
+        boolean isBlue = canUseBluetooth();
+        if( isBlue )
+            // 페어링된 원격 디바이스 목록 구하기
+            getParedDevice();
+
+        onCreateView();
+
+    }
+
+    public void onCreateView(){
         // Usb to Serial init
         mContext = getApplicationContext();
 
@@ -182,6 +187,7 @@ public class MainActivity extends Activity {
         pauseBtn = (Button)findViewById(R.id.pause);
         stopBtn = (Button)findViewById(R.id.stop);
         recordBtn = (Button)findViewById(R.id.record);
+        restartBtn = (Button)findViewById(R.id.restart);
 
         sMaxTv = (TextView)findViewById(R.id.sMax);
         xMaxTv = (TextView)findViewById(R.id.xMax);
@@ -247,10 +253,18 @@ public class MainActivity extends Activity {
         stopBtn.setEnabled(false);
         recordBtn.setEnabled(false);
 
-//        sService = new ChartService(this, xWidth, yHeight);
-//        xService = new ChartService(this, xWidth, yHeight);
-//        yService = new ChartService(this, xWidth, yHeight);
-//        zService = new ChartService(this, xWidth, yHeight);
+        mService = new ChartService(mainChartLayout);
+        mService.createChart();
+
+        sService = new SingleChartService(sSubChartLayout);
+        sService.createChart("Sound", Color.rgb(100, 100, 200));
+        xService = new SingleChartService(xSubChartLayout);
+        xService.createChart("X", Color.rgb(100, 200, 100));
+        yService = new SingleChartService(ySubChartLayout);
+        yService.createChart("Y", Color.rgb(200, 100, 100));
+        zService = new SingleChartService(zSubChartLayout);
+        zService.createChart("Z", Color.rgb(200, 200, 200));
+
 
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -267,16 +281,11 @@ public class MainActivity extends Activity {
                 stopBtn.setEnabled(true);
                 recordBtn.setEnabled(true);
 
-//                sSubChartLayout.removeAllViews();
-//                xSubChartLayout.removeAllViews();
-//                ySubChartLayout.removeAllViews();
-//                zSubChartLayout.removeAllViews();
-
+//                mService.seriesChange(preStat);
+                mService.clear();
                 mService = new ChartService(mainChartLayout);
-//                mService.clear();
                 mService.createChart();
 
-                list = new ArrayList<double[]>();
                 startTime = System.currentTimeMillis();
                 mService.start();
                 MicDoStart();
@@ -312,7 +321,6 @@ public class MainActivity extends Activity {
                 recordBtn.setEnabled(pauseYn);
                 Log.d("pause", "시작");
 
-                //startBtn.setEnabled(pauseYn);
                 pauseYn = !pauseYn;
 
                 if(pauseYn){
@@ -339,6 +347,7 @@ public class MainActivity extends Activity {
                 recordBtn.setEnabled(false);
                 Log.d("stop", "시작");
 
+                restartBtn.setVisibility(View.VISIBLE);
                 audioReader.stopReader();
                 startTime = 0;
 
@@ -364,18 +373,16 @@ public class MainActivity extends Activity {
                 mainChartLayout.setLayoutParams(lp);
                 findViewById(R.id.sub_layout).setVisibility(View.VISIBLE);
 
+//
+//                sService = new SingleChartService(sSubChartLayout);
+//                sService.createChart("Sound", Color.rgb(100, 100, 200));
+//                xService = new SingleChartService(xSubChartLayout);
+//                xService.createChart("X", Color.rgb(100, 200, 100));
+//                yService = new SingleChartService(ySubChartLayout);
+//                yService.createChart("Y", Color.rgb(200, 100, 100));
+//                zService = new SingleChartService(zSubChartLayout);
+//                zService.createChart("Z", Color.rgb(200, 200, 200));
 
-                sService = new SingleChartService(sSubChartLayout);
-                sService.createChart("Sound", Color.rgb(100, 100, 200));
-                xService = new SingleChartService(xSubChartLayout);
-                xService.createChart("X", Color.rgb(100, 200, 100));
-                yService = new SingleChartService(ySubChartLayout);
-                yService.createChart("Y", Color.rgb(200, 100, 100));
-                zService = new SingleChartService(zSubChartLayout);
-                zService.createChart("Z", Color.rgb(200, 200, 200));
-
-                //recordList = new ArrayList<double[]>();
-                //recordCreate();
                 fileCreate();
                 sService.start();
                 xService.start();
@@ -393,13 +400,21 @@ public class MainActivity extends Activity {
         });
 
 
-        // 블루투스 사용 가능상태 판단
-        boolean isBlue = canUseBluetooth();
-        if( isBlue )
-            // 페어링된 원격 디바이스 목록 구하기
-            getParedDevice();
+        restartBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(blueToothYn){
+                    mSocketThread.write("M,RST,E");
+                }
+                setContentView(R.layout.activity_main);
+                onCreateView();
+            }
+        });
 
     }
+
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -417,48 +432,12 @@ public class MainActivity extends Activity {
             double y = Double.valueOf(String.format("%1.2f",Math.random() * 100));
             double z = Double.valueOf(String.format("%1.2f",Math.random() * 100));
 
-//            double s = sensor.getS();
-//            double x = sensor.getX();
-//            double y = sensor.getY();
-//            double z = sensor.getZ();
-
             setChartData(s, x, y, z);
         }
     };
 
-    public void setS(double s){
-        setChartData(s, 0, 0, 0);
-    }
-
     public void setChartData(double s, double x, double y, double z){
 
-//        double s = sensor.getS();
-//        double x = sensor.getX();
-//        double y = sensor.getY();
-//        double z = sensor.getZ();
-
-        SimpleDateFormat sdfNow = new SimpleDateFormat("yyyyMMddHHmmss");
-
-
-        double[] data = new double[5];
-
-        data[0] = t;
-        data[1] = s;
-        data[2] = x;
-        data[3] = y;
-        data[4] = z;
-        list.add(data);
-
-
-//        if(speed >= 5){
-//            mService.updateChart2(list, pauseYn);
-//            list.clear();
-//            speed = 0;
-//        }else{
-//            speed++;
-//        }
-
-//        mService.updateChart(t, s, x, y, z, pauseYn);
         mService.setData(t, s, x, y, z);
 
 
@@ -471,14 +450,23 @@ public class MainActivity extends Activity {
         if(zMax < z)
             zMax = z;
 
-        if(sMin == 0 || sMin > s)
+        if(minCnt ==0){
             sMin = s;
-        if(xMin == 0 || xMin > x)
             xMin = x;
-        if(yMin == 0 || yMin > y)
             yMin = y;
-        if(zMin == 0 || zMin > z)
             zMin = z;
+            minCnt++;
+        }else{
+            if(sMin > s)
+                sMin = s;
+            if(xMin > x)
+                xMin = x;
+            if(yMin > y)
+                yMin = y;
+            if(zMin > z)
+                zMin = z;
+        }
+
 
         sMaxTv.setText(String.valueOf(sMax));
         xMaxTv.setText(String.valueOf(xMax));
@@ -496,34 +484,18 @@ public class MainActivity extends Activity {
             if(recordYn && recordT <= 5){
                 mSocketThread.write("Y,"+t+","+s+","+x+","+y+","+z+",E");
             }else{
-                //Log.d("data", "N,"+t+","+s+","+x+","+y+","+z);
                 mSocketThread.write("N,"+t+","+s+","+x+","+y+","+z+",E");
             }
 
         }
 
-        //Log.d("recordT", String.valueOf(recordT));
         if(recordYn && recordT <= 5){
 
-//                Log.d("record start", "start");
-            //sService.updateChart(t, x, y, z, s, false);
-            //xService.updateChart(t, x, y, z, s, false);
-            //yService.updateChart(t, x, y, z, s, false);
-            //zService.updateChart(t, x, y, z, s, false);
 
             sService.setData(recordT, s);
             xService.setData(recordT, x);
             yService.setData(recordT, y);
             zService.setData(recordT, z);
-
-            double[] record = new double[5];
-
-//            record[0] = recordT;
-//            record[1] = s;
-//            record[2] = x;
-//            record[3] = y;
-//            record[4] = z;
-//            recordList.add(record);
 
             fileWrite(recordT+","+s+","+x+","+y+","+z+"\n");
 
@@ -536,14 +508,22 @@ public class MainActivity extends Activity {
             if(rzMax < z)
                 rzMax = z;
 
-            if(rsMin == 0 || rsMin > s)
+            if(rMinCnt == 0){
                 rsMin = s;
-            if(rxMin == 0 || rxMin > x)
                 rxMin = x;
-            if(ryMin == 0 || ryMin > y)
                 ryMin = y;
-            if(rzMin == 0 || rzMin > z)
                 rzMin = z;
+                rMinCnt++;
+            }else {
+                if (rsMin > s)
+                    rsMin = s;
+                if (rxMin > x)
+                    rxMin = x;
+                if (ryMin > y)
+                    ryMin = y;
+                if (rzMin > z)
+                    rzMin = z;
+            }
 
             rsMaxTv.setText(String.valueOf(rsMax));
             rxMaxTv.setText(String.valueOf(rxMax));
@@ -560,54 +540,16 @@ public class MainActivity extends Activity {
 
         }else if(recordYn && recordT > 5) {
 
-//            sService.updateChart(recordList);
-//            xService.updateChart(recordList);
-//            yService.updateChart(recordList);
-//            zService.updateChart(recordList);
             fileClose();
             recordYn = false;
             sService.stop();
             xService.stop();
             yService.stop();
             zService.stop();
+            recordT = 0;
         }
     }
 
-/*
-    public void recordCreate(){
-        Log.d("sub layout", "click");
-
-        sService.setXYMultipleSeriesDataset();
-        sService.setXYMultipleSeriesRenderer("Sound");
-        sView = sService.getGraphicalView();
-        sSubChartLayout.addView(sView, new LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        sService.SeriesChange("sS");
-
-
-        xService.setXYMultipleSeriesDataset();
-        xService.setXYMultipleSeriesRenderer("X");
-        xView = xService.getGraphicalView();
-        xSubChartLayout.addView(xView, new LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        xService.SeriesChange("xS");
-
-        yService.setXYMultipleSeriesDataset();
-        yService.setXYMultipleSeriesRenderer("Y");
-        yView = yService.getGraphicalView();
-        ySubChartLayout.addView(yView, new LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        yService.SeriesChange("yS");
-
-        zService.setXYMultipleSeriesDataset();
-        zService.setXYMultipleSeriesRenderer("Z");
-        zView = zService.getGraphicalView();
-        zSubChartLayout.addView(zView, new LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        zService.SeriesChange("zS");
-
-    }
-*/
     // 블루투스 사용 가능상태 판단
     public boolean canUseBluetooth() {
         // 블루투스 어댑터를 구한다
@@ -767,11 +709,12 @@ public class MainActivity extends Activity {
         public void handleMessage(Message msg) {
             if (msg.what == 0) {
                 String strMsg = (String)msg.obj;
-//                mTextMsg.setText(strMsg);
                 Toast.makeText(MainActivity.this, strMsg, Toast.LENGTH_SHORT).show();
             }else if(msg.what == 9){
 
                 String strMsg = (String)msg.obj;
+                Log.d("strMsg 9 ", strMsg);
+
                 if(strMsg.equals("START")){
                     startBtn.performClick();
                 }else if(strMsg.equals("STOP")){
@@ -780,7 +723,9 @@ public class MainActivity extends Activity {
                     pauseBtn.performClick();
                 }else if(strMsg.equals("RECORD")){
                     recordBtn.performClick();
-
+                }else if(strMsg.equals("RESTART")){
+                    Log.d("RESTART", "!!!!!!!!");
+                    restartBtn.performClick();
                 }
             }
         }
@@ -833,9 +778,9 @@ public class MainActivity extends Activity {
                     // 입력 스트림에서 데이터를 읽는다
                     bytes = mmInStream.read(buffer);
                     String strBuf = new String(buffer, 0, bytes);
-                    //showMessage("Receive: " + strBuf);
+                    showMessage("Receive: " + strBuf);
                     //Toast.makeText(MainActivity.this, strBuf, Toast.LENGTH_SHORT).show();
-
+                    Log.d("strBuf",strBuf);
                     if(strBuf.equals("START")){
                         //blueToothYn = true;
 //                        startBtnClick();
@@ -852,6 +797,11 @@ public class MainActivity extends Activity {
                     }else if(strBuf.equals("RECORD")){
                         //recordYn = true;
                         Message msg = Message.obtain(mHandler, 9, "RECORD");
+                        mHandler.sendMessage(msg);
+                    }else if(strBuf.equals("RESTART")){
+                        //recordYn = true;
+                        Log.d("strBuf","RESTART");
+                        Message msg = Message.obtain(mHandler, 9, "RESTART");
                         mHandler.sendMessage(msg);
                     }
 
@@ -883,6 +833,11 @@ public class MainActivity extends Activity {
         SimpleDateFormat sdfNow = new SimpleDateFormat("yyyyMMddHHmmss");
         String time = sdfNow.format(new Date(System.currentTimeMillis())) + ".txt";
 
+        File dir = new File(path);
+
+        if(!dir.exists()){
+            dir.mkdir();
+        }
 
         File file = new File(path + time);
 
@@ -934,9 +889,9 @@ public class MainActivity extends Activity {
         if( mSocketThread != null )
             mSocketThread = null;
 
-        if (timer != null) {
-            timer.cancel();
-        }
+//        if (timer != null) {
+//            timer.cancel();
+//        }
 
         audioReader.stopReader();
         mService.stop();
